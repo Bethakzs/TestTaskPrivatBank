@@ -1,11 +1,11 @@
 spring:
-  datasource:
+  second-datasource:
     url: jdbc:postgresql://localhost:5432/privatbank
     username: postgres
     password: 12345
     driver-class-name: org.postgresql.Driver
 
-  second-datasource:
+  datasource:
     url: jdbc:h2:mem:testdb
     username: h2
     password: 12345

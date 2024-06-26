@@ -6,6 +6,7 @@ import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -34,9 +35,28 @@ public class DatabaseErrorHandler {
 
     @ExceptionHandler({PSQLException.class, SQLException.class})
     public void handleDatabaseException(Exception ex, WebRequest request) {
-        System.err.println("Error connecting to the database. Switching to H2.");
-        logger.error("Error connecting to the database. Switching to H2.");
-        switchToH2();
+        System.err.println("Error connecting to the database. Switching to PostgreSQL.");
+        logger.error("Error connecting to the database. Switching to PostgreSQL.");
+        switchToPostgreSQL();
+    }
+
+    private void switchToPostgreSQL() {
+        routingDataSource.switchToSecondary();
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.hbm2ddl.auto", "update");
+        properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+
+        entityManagerFactoryBean.setDataSource(routingDataSource);
+        entityManagerFactoryBean.setJpaPropertyMap(properties);
+        entityManagerFactoryBean.afterPropertiesSet();
+
+        try {
+            DataSourceUtils.releaseConnection(routingDataSource.getConnection(), routingDataSource);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        logger.info("Switched to PostgreSQL.");
     }
 
     private void switchToH2() {
