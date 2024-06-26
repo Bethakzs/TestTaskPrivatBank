@@ -29,8 +29,13 @@ public class DeadlineMonitorService {
     @Value("${variables.topic.deadline}")
     private String deadlineTopic;
 
-    @Scheduled(fixedRate = 1000) // check every minute
+    @Scheduled(fixedRate = 1000) // check every second
     public void checkDeadlinesAndSendMessages() {
+        if (!isPrimaryDatabaseConnected()) {
+            logger.warn("Primary database connection lost. Switched to backup database.");
+            return;
+        }
+
         LocalDateTime now = LocalDateTime.now();
 
         // Find tasks with deadlines in 1 hour and 10 minutes
@@ -47,6 +52,15 @@ public class DeadlineMonitorService {
         sendMessages(overdueTasks, "has reached its deadline.", new DeadlineNotificationStrategy());
     }
 
+    private boolean isPrimaryDatabaseConnected() {
+        try {
+            taskRepository.count();
+            return true;
+        } catch (Exception e) {
+            logger.error("Error checking primary database connection: {}", e.getMessage());
+            return false;
+        }
+    }
 
     private void sendMessages(List<Task> tasks, String messageSuffix, NotificationStrategy strategy) {
         for (Task task : tasks) {
