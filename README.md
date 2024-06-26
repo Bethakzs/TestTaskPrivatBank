@@ -1,12 +1,13 @@
 # Task Manager
-logs are stored in the logs folder, H2 db is main, postgres is for backup. New business logic is added to the project:
+
+Logs are stored in the logs folder. I remade the task. I set the main database to PostgreSQL and the secondary one to H2 because I couldn't kill the H2 process to test my auto-reconnect feature. My app is set up for this logic, but in the 'true-task' branch, you can see the code with the opposite configuration. New business logic is added to the project:
 1. The maximum number of tasks allowed is 100.
 2. When a task is created, it starts with a status of "CREATED" and uses local time by default. We trigger task notifications to Kafka when the deadline approaches (1 hour before, 10 minutes before, and at the deadline itself)
 
 # **How to run**
 1. Open your IDE and navigate to the directory where you want to clone the project.
 2. Open the command prompt from that directory and enter the following command
-   ```git clone https://github.com/bethakzs/```
+   ```git clone https://github.com/Bethakzs/TestTaskPrivatBank.git```
 3. Change your current directory to the project directory by entering ```cd TestTaskPrivatBank``` in the command prompt.
 4. Ensure Docker Desktop is running on your PC. Then, in the command prompt, enter ```docker-compose up``` to start the project.
 5. Open postman and try API request.
