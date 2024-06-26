@@ -1,7 +1,11 @@
 package org.example.testtaskprivatbank.db;
 
+import lombok.RequiredArgsConstructor;
+import org.example.testtaskprivatbank.service.impl.TaskServiceImpl;
+import org.postgresql.util.PSQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -9,34 +13,26 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import org.postgresql.util.PSQLException;
-
+import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
+@RequiredArgsConstructor
 public class DatabaseErrorHandler {
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    private static final Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
 
-    @Autowired
-    private RoutingDataSource routingDataSource;
+    private final RoutingDataSource routingDataSource;
+    private final LocalContainerEntityManagerFactoryBean entityManagerFactoryBean;
+    private final PlatformTransactionManager transactionManager;
 
-    @Autowired
-    private LocalContainerEntityManagerFactoryBean entityManagerFactoryBean;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    @ExceptionHandler(PSQLException.class)
-    public void handlePSQLException(PSQLException ex, WebRequest request) {
-        System.err.println("Помилка у підключенні до бази даних PostgreSQL. Перемикаюся на H2:");
-
-        // Логіка для переключення на використання H2 бази даних
+    @ExceptionHandler({PSQLException.class, SQLException.class})
+    public void handleDatabaseException(Exception ex, WebRequest request) {
+        System.err.println("Error connecting to the database. Switching to H2.");
+        logger.error("Error connecting to the database. Switching to H2.");
         switchToH2();
-
-        ex.printStackTrace();
     }
 
     private void switchToH2() {
@@ -51,5 +47,6 @@ public class DatabaseErrorHandler {
         entityManagerFactoryBean.afterPropertiesSet();
 
         ((JpaTransactionManager) transactionManager).setEntityManagerFactory(entityManagerFactoryBean.getObject());
+        logger.info("Switched to H2.");
     }
 }

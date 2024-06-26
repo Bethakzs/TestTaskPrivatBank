@@ -29,7 +29,7 @@ public class DeadlineMonitorService {
     @Value("${variables.topic.deadline}")
     private String deadlineTopic;
 
-    @Scheduled(fixedRate = 1000) // check every minute
+    @Scheduled(fixedRate = 1000) // check every sek
     public void checkDeadlinesAndSendMessages() {
         LocalDateTime now = LocalDateTime.now();
 

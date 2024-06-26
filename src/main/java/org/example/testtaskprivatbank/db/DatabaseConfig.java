@@ -10,16 +10,16 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
+@EnableRetry
 public class DatabaseConfig {
 
     @Value("${spring.datasource.url}")
@@ -60,8 +60,8 @@ public class DatabaseConfig {
 
     @Primary
     @Bean(name = "routingDataSource")
-    public DataSource routingDataSource(@Qualifier("mainDataSource") DataSource mainDataSource,
-                                        @Qualifier("secondaryDataSource") DataSource secondaryDataSource) {
+    public RoutingDataSource routingDataSource(@Qualifier("mainDataSource") DataSource mainDataSource,
+                                               @Qualifier("secondaryDataSource") DataSource secondaryDataSource) {
         RoutingDataSource routingDataSource = new RoutingDataSource();
         routingDataSource.setMainDataSource(mainDataSource);
         routingDataSource.setSecondaryDataSource(secondaryDataSource);

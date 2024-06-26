@@ -3,28 +3,19 @@ package org.example.testtaskprivatbank.db;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import lombok.Setter;
 import org.springframework.jdbc.datasource.AbstractDataSource;
 
+@Setter
 public class RoutingDataSource extends AbstractDataSource {
 
     private DataSource mainDataSource;
     private DataSource secondaryDataSource;
     private boolean useSecondary = false;
 
-    public void setMainDataSource(DataSource mainDataSource) {
-        this.mainDataSource = mainDataSource;
-    }
-
-    public void setSecondaryDataSource(DataSource secondaryDataSource) {
-        this.secondaryDataSource = secondaryDataSource;
-    }
-
     public void switchToSecondary() {
         this.useSecondary = true;
-    }
-
-    public void switchToMain() {
-        this.useSecondary = false;
     }
 
     @Override
