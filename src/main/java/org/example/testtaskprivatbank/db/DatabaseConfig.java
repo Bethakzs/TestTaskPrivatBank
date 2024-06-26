@@ -1,21 +1,29 @@
 package org.example.testtaskprivatbank.db;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.exception.GenericJDBCException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
@@ -48,7 +56,7 @@ public class DatabaseConfig {
 
     @Bean
     @Primary
-    @Retryable(include = { org.springframework.dao.DataAccessResourceFailureException.class }, maxAttempts = 3)
+    @Retryable(include = { DataAccessResourceFailureException.class, GenericJDBCException.class }, maxAttempts = 3, backoff = @Backoff(delay = 500))
     public DataSource mainDataSource() {
         logger.info("Connecting to main database with URL: {}", mainDbUrl);
         return DataSourceBuilder.create()
@@ -69,17 +77,17 @@ public class DatabaseConfig {
     }
 
     @Bean(name = "mainDatabaseJdbcTemplate")
-    public JdbcTemplate mainDatabaseJdbcTemplate(DataSource mainDataSource) {
+    public JdbcTemplate mainDatabaseJdbcTemplate(@Qualifier("mainDataSource") DataSource mainDataSource) {
         return new JdbcTemplate(mainDataSource);
     }
 
     @Bean(name = "reservedDatabaseJdbcTemplate")
-    public JdbcTemplate reservedDatabaseJdbcTemplate(DataSource secondaryDataSource) {
+    public JdbcTemplate reservedDatabaseJdbcTemplate(@Qualifier("secondaryDataSource") DataSource secondaryDataSource) {
         return new JdbcTemplate(secondaryDataSource);
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource mainDataSource) {
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(@Qualifier("mainDataSource") DataSource mainDataSource) {
         logger.info("Configuring EntityManagerFactory with main database (PostgreSQL).");
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(mainDataSource);
@@ -96,4 +104,16 @@ public class DatabaseConfig {
         return em;
     }
 
+    @Bean
+    public PlatformTransactionManager transactionManager(EntityManagerFactory mainEntityManagerFactory) {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(mainEntityManagerFactory);
+        return transactionManager;
+    }
+
+    @Bean
+    public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+        return new PersistenceExceptionTranslationPostProcessor();
+    }
 }
+
