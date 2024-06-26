@@ -20,7 +20,7 @@ Logs are stored in the logs folder. I remade the task with backup db: I set the 
 
 
 # **Technologies**
-- Java, Spring (Boot, JDBC), H2, PostgreSQL, Hibernate, Lombok, Swagger, Kafka
+- Java 17, Spring (Boot, JDBC), H2, PostgreSQL, Hibernate, Lombok, Swagger, Kafka, Logback
 
 # **API Documentation** (also you can check the Swagger UI - http://localhost:8080/swagger-ui/index.html#/)
 
