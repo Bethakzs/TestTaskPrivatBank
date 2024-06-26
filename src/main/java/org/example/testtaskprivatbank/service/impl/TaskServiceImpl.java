@@ -8,7 +8,6 @@ import org.example.testtaskprivatbank.repository.TaskRepository;
 import org.example.testtaskprivatbank.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,6 +27,20 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public Long createTask(Task task) {
+        validateTask(task);
+
+        LocalDateTime now = LocalDateTime.now();
+        task.setCreatedAt(now);
+        task.setStatus(TaskStatus.TODO);
+
+        setNotificationTimes(task, now);
+
+        Task savedTask = taskRepository.save(task);
+        logger.info("Created task with id: {}", savedTask.getId());
+        return savedTask.getId();
+    }
+
+    private void validateTask(Task task) {
         if (task.getTitle().isEmpty()) {
             String errorMessage = "Task title cannot be empty.";
             logger.error(errorMessage);
@@ -43,23 +56,15 @@ public class TaskServiceImpl implements TaskService {
             logger.error(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
+    }
 
-        LocalDateTime now = LocalDateTime.now();
-        task.setCreatedAt(now);
-        task.setStatus(TaskStatus.TODO);
-
-        // Set start time for notifications
+    private void setNotificationTimes(Task task, LocalDateTime now) {
         LocalDateTime inOneHour = now.plusHours(1);
         LocalDateTime inTenMinutes = now.plusMinutes(10);
 
-        // check if the deadline is before the notification time
         task.setNotifiedOneHour(task.getDeadline().isBefore(inOneHour));
         task.setNotifiedTenMinutes(task.getDeadline().isBefore(inTenMinutes));
         task.setNotifiedDeadline(false);
-
-        Task savedTask = taskRepository.save(task);
-        logger.info("Created task with id: {}", savedTask.getId());
-        return savedTask.getId();
     }
 
     @Override
@@ -96,42 +101,39 @@ public class TaskServiceImpl implements TaskService {
         Optional<Task> taskOptional = taskRepository.findById(id);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-
-            // Validate and update fields if they are present in the request body
-            if (taskDetails.containsKey("title")) {
-                String title = (String) taskDetails.get("title");
-                if (taskRepository.existsByTitle(title) && !task.getTitle().equals(title)) {
-                    throw new IllegalArgumentException("A task with the given title already exists.");
-                }
-                task.setTitle(title);
-            }
-            if (taskDetails.containsKey("description")) {
-                String description = (String) taskDetails.get("description");
-                task.setDescription(description);
-            }
-            if (taskDetails.containsKey("status")) {
-                String status = (String) taskDetails.get("status");
-                task.setStatus(TaskStatus.valueOf(status));
-            }
-            if (taskDetails.containsKey("deadline")) {
-                String deadlineStr = (String) taskDetails.get("deadline");
-                LocalDateTime deadline = LocalDateTime.parse(deadlineStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                task.setDeadline(deadline);
-
-                // Check and set notification fields based on the new deadline
-                LocalDateTime now = LocalDateTime.now();
-                LocalDateTime inOneHour = now.plusHours(1);
-                LocalDateTime inTenMinutes = now.plusMinutes(10);
-
-                task.setNotifiedOneHour(deadline.isBefore(inOneHour));
-                task.setNotifiedTenMinutes(deadline.isBefore(inTenMinutes));
-                task.setNotifiedDeadline(false);
-            }
-
+            updateTaskDetails(task, taskDetails);
             Task updatedTask = taskRepository.save(task);
+            logger.info("Updated task fields for task with id {}", id);
             return updatedTask;
         }
+        logger.warn("Task with id {} not found for field update", id);
         return null;
+    }
+
+    private void updateTaskDetails(Task task, Map<String, Object> taskDetails) {
+        if (taskDetails.containsKey("title")) {
+            String title = (String) taskDetails.get("title");
+            if (taskRepository.existsByTitle(title) && !task.getTitle().equals(title)) {
+                throw new IllegalArgumentException("A task with the given title already exists.");
+            }
+            task.setTitle(title);
+        }
+        if (taskDetails.containsKey("description")) {
+            String description = (String) taskDetails.get("description");
+            task.setDescription(description);
+        }
+        if (taskDetails.containsKey("status")) {
+            String status = (String) taskDetails.get("status");
+            task.setStatus(TaskStatus.valueOf(status));
+        }
+        if (taskDetails.containsKey("deadline")) {
+            String deadlineStr = (String) taskDetails.get("deadline");
+            LocalDateTime deadline = LocalDateTime.parse(deadlineStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            task.setDeadline(deadline);
+
+            LocalDateTime now = LocalDateTime.now();
+            setNotificationTimes(task, now);
+        }
     }
 
     @Override

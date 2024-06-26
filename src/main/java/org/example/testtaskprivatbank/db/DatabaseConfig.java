@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -19,7 +18,6 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@EnableRetry
 public class DatabaseConfig {
 
     @Value("${spring.datasource.url}")
@@ -79,7 +77,6 @@ public class DatabaseConfig {
         em.setJpaVendorAdapter(vendorAdapter);
 
         Properties properties = new Properties();
-        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         properties.setProperty("hibernate.hbm2ddl.auto", "update");
         em.setJpaProperties(properties);
 
