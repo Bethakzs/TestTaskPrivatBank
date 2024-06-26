@@ -14,6 +14,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 @Configuration
@@ -38,7 +40,6 @@ public class DatabaseConfig {
     @Value("${spring.second-datasource.password}")
     private String secondaryDbPassword;
 
-    @Primary
     @Bean(name = "mainDataSource")
     public DataSource mainDataSource() {
         return DataSourceBuilder.create()
@@ -58,10 +59,20 @@ public class DatabaseConfig {
     }
 
     @Primary
+    @Bean(name = "routingDataSource")
+    public DataSource routingDataSource(@Qualifier("mainDataSource") DataSource mainDataSource,
+                                        @Qualifier("secondaryDataSource") DataSource secondaryDataSource) {
+        RoutingDataSource routingDataSource = new RoutingDataSource();
+        routingDataSource.setMainDataSource(mainDataSource);
+        routingDataSource.setSecondaryDataSource(secondaryDataSource);
+        return routingDataSource;
+    }
+
+    @Primary
     @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(@Qualifier("mainDataSource") DataSource mainDataSource) {
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(@Qualifier("routingDataSource") DataSource routingDataSource) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(mainDataSource);
+        em.setDataSource(routingDataSource);
         em.setPackagesToScan("org.example.testtaskprivatbank");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

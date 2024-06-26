@@ -1,18 +1,16 @@
 package org.example.testtaskprivatbank.db;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import org.postgresql.util.PSQLException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +19,9 @@ public class DatabaseErrorHandler {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private RoutingDataSource routingDataSource;
 
     @Autowired
     private LocalContainerEntityManagerFactoryBean entityManagerFactoryBean;
@@ -39,13 +40,13 @@ public class DatabaseErrorHandler {
     }
 
     private void switchToH2() {
-        DataSource secondaryDataSource = applicationContext.getBean("secondaryDataSource", DataSource.class);
+        routingDataSource.switchToSecondary();
 
         Map<String, Object> properties = new HashMap<>();
         properties.put("hibernate.hbm2ddl.auto", "update");
         properties.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
 
-        entityManagerFactoryBean.setDataSource(secondaryDataSource);
+        entityManagerFactoryBean.setDataSource(routingDataSource);
         entityManagerFactoryBean.setJpaPropertyMap(properties);
         entityManagerFactoryBean.afterPropertiesSet();
 
