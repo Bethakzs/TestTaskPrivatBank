@@ -1,19 +1,18 @@
-# Stage 1: Build stage
-FROM maven:3.8.5-openjdk-21-slim AS build
+# Stage 1: Build the application using Maven and JDK 21
+FROM openjdk:21-slim AS build
 
-WORKDIR /app
+# Install Maven
+RUN apt-get update && apt-get install -y maven
 
-COPY pom.xml .
-RUN mvn dependency:go-offline
+# Copy application source code and build (skipping tests)
+COPY . .
+RUN mvn clean package -DskipTests
 
-COPY src ./src
-RUN mvn package -DskipTests
+# Stage 2: Use Eclipse Temurin JRE to run the application
+FROM eclipse-temurin:21-jre-jammy
 
-# Stage 2: Production stage
-FROM adoptopenjdk:17-jre-hotspot
+# Copy the compiled JAR file from the build stage
+COPY --from=build /target/*.jar app.jar
 
-WORKDIR /app
-
-COPY --from=build /app/target/*.jar app.jar
-
+# Set the entrypoint to run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

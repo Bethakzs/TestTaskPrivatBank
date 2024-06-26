@@ -1,6 +1,6 @@
 # Task Manager
 
-Logs are stored in the logs folder. I remade the task. I set the main database to PostgreSQL and the secondary one to H2 because I couldn't kill the H2 process to test my auto-reconnect feature. My app is set up for this logic, but in the 'true-task' branch, you can see the code with the opposite configuration. New business logic is added to the project:
+Logs are stored in the logs folder. I remade the task with backup db: I set the main database to PostgreSQL and the secondary one to H2 because I couldn't kill the H2 process to test my auto-reconnect feature. My app is set up for this logic, but in the 'true-task' branch, you can see the code with the opposite configuration, but I can't test it. New business logic is added to the project:
 1. The maximum number of tasks allowed is 100.
 2. When a task is created, it starts with a status of "CREATED" and uses local time by default. We trigger task notifications to Kafka when the deadline approaches (1 hour before, 10 minutes before, and at the deadline itself)
 
@@ -8,9 +8,16 @@ Logs are stored in the logs folder. I remade the task. I set the main database t
 1. Open your IDE and navigate to the directory where you want to clone the project.
 2. Open the command prompt from that directory and enter the following command
    ```git clone https://github.com/Bethakzs/TestTaskPrivatBank.git```
+
+## Docker
 3. Change your current directory to the project directory by entering ```cd TestTaskPrivatBank``` in the command prompt.
 4. Ensure Docker Desktop is running on your PC. Then, in the command prompt, enter ```docker-compose up``` to start the project.
 5. Open postman and try API request.
+
+## IDE
+3. Ensure Kafka is running (localhost:9092), PostgreSQL is set up (with properties configured in application.yml), and ensure port 8080 is free or change it to another.
+4. Run your application.
+
 
 # **Technologies**
 - Java, Spring (Boot, JDBC), H2, PostgreSQL, Hibernate, Lombok, Swagger, Kafka
@@ -26,7 +33,7 @@ Logs are stored in the logs folder. I remade the task. I set the main database t
       {
         "title": "Test Task",
         "description": "Description of the task",
-        "deadline": "2024-06-25T19:22:59"
+        "deadline": "2024-06-27T19:22:00"
       }
       ```
     - Response: 200 OK, Task created with id: {id}
@@ -65,7 +72,7 @@ Logs are stored in the logs folder. I remade the task. I set the main database t
         "title": "New Title",
         "description": "New Description",
         "status": "IN_PROGRESS",
-        "deadline": "2024-06-25T19:22:59"
+        "deadline": "2024-07-05T19:22:59"
       }
       ```
     - Response: 200 OK, Task successfully updated

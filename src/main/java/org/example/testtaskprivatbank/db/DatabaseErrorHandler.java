@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,31 +23,20 @@ public class DatabaseErrorHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
 
-    private final RoutingDataSource routingDataSource;
-    private final LocalContainerEntityManagerFactoryBean entityManagerFactoryBean;
-    private final PlatformTransactionManager transactionManager;
+    @Autowired
+    private RoutingDataSource routingDataSource;
+
+    @Autowired
+    private LocalContainerEntityManagerFactoryBean entityManagerFactoryBean;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @ExceptionHandler({PSQLException.class, SQLException.class})
     public void handleDatabaseException(Exception ex, WebRequest request) {
-        System.err.println("Error connecting to the database. Switching to PostgreSQL.");
-        logger.error("Error connecting to the database. Switching to PostgreSQL.");
-//        switchToPostgreSQL();
+        System.err.println("Error connecting to the database. Switching to H2.");
+        logger.error("Error connecting to the database. Switching to H2.");
         switchToH2();
-    }
-
-    private void switchToPostgreSQL() {
-        routingDataSource.switchToSecondary();
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.hbm2ddl.auto", "update");
-        properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-
-        entityManagerFactoryBean.setDataSource(routingDataSource);
-        entityManagerFactoryBean.setJpaPropertyMap(properties);
-        entityManagerFactoryBean.afterPropertiesSet();
-
-        ((JpaTransactionManager) transactionManager).setEntityManagerFactory(entityManagerFactoryBean.getObject());
-        logger.info("Switched to PostgreSQL.");
     }
 
     private void switchToH2() {

@@ -1,11 +1,13 @@
 package org.example.testtaskprivatbank.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.testtaskprivatbank.db.DatabaseErrorHandler;
+import org.example.testtaskprivatbank.db.RoutingDataSource;
 import org.example.testtaskprivatbank.model.Task;
 import org.example.testtaskprivatbank.model.TaskStatus;
 import org.example.testtaskprivatbank.service.TaskService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,6 +36,13 @@ public class TaskControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // Both mocks must be present, without them, all tests fail
+    @MockBean
+    private RoutingDataSource routingDataSource;
+
+    @MockBean
+    private DatabaseErrorHandler databaseErrorHandler;
 
     @Test
     public void testCreateTask() throws Exception {
@@ -137,14 +146,12 @@ public class TaskControllerTest {
 
     @Test
     public void testUpdateTaskFields_invalidDeadlineFormat() throws Exception {
-        // Arrange
         Long taskId = 1L;
         String invalidDeadline = "2023-12-31"; // Invalid format
 
         Map<String, Object> taskDetails = new HashMap<>();
         taskDetails.put("deadline", invalidDeadline);
 
-        // Act & Assert
         mockMvc.perform(patch("/api/v1/task/update/{id}", taskId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(taskDetails)))
