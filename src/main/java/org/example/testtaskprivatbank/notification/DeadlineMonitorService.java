@@ -29,7 +29,7 @@ public class DeadlineMonitorService {
     @Value("${variables.topic.deadline}")
     private String deadlineTopic;
 
-    @Scheduled(fixedRate = 1000) // check every second
+    @Scheduled(fixedRate = 30000) // check every half a minute
     public void checkDeadlinesAndSendMessages() {
         if (!isPrimaryDatabaseConnected()) {
             logger.warn("Primary database connection lost. Switched to backup database.");
